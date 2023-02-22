@@ -1,9 +1,14 @@
 plugins {
     id("java")
+    id("application")
 }
 
 group = "dev.shirosaka.scheduler"
 version = "1.0-SNAPSHOT"
+
+application {
+    mainClass.set("dev.shirosaka.scheduler.Main")
+}
 
 repositories {
     mavenCentral()
