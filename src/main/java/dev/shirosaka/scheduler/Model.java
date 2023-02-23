@@ -5,29 +5,49 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Model extends AbstractTableModel {
-    private final int elapsedTime = 0;
-    private final Scheduler scheduler;
-
-    private final List<Process> processes = new ArrayList<>(List.of(
-            new Process("A", 0, "C"),
-            new Process("B", 2, "C"),
-            new Process("C", 4, "C")
-    ));
-
+    private final List<Process> processes = new ArrayList<>();
     private final List<String> columns = new ArrayList<>(List.of("Name", "Start priority"));
 
-    public Model() {
-        scheduler = new Scheduler(processes);
+    public void addProcess(Process proc) {
+        if (proc == null || processes.contains(proc))
+            return;
+        var i = processes.size();
+        processes.add(proc);
+        fireTableRowsInserted(i, i);
+        Controller.log("Added process " + proc.getName() + "@" + i + " with work " + proc.getWork());
+    }
+
+    public void removeProcess(Process proc) {
+        if (proc == null || !processes.contains(proc))
+            return;
+        var i = processes.indexOf(proc);
+        processes.remove(proc);
+        fireTableRowsDeleted(i, i);
+        Controller.log("Deleted process " + proc.getName() + "@" + i + " with work " + proc.getWork());
+    }
+
+    public List<Process> getProcesses() {
+        return processes;
+    }
+
+    public void tick(int tick) {
+        columns.add("Tick " + tick);
+        fireTableStructureChanged();
     }
 
     @Override
-    public int getRowCount() {
-        return 1 + processes.size();
+    public String getColumnName(int column) {
+        return columns.get(column);
     }
 
     @Override
     public int getColumnCount() {
-        return elapsedTime;
+        return columns.size();
+    }
+
+    @Override
+    public int getRowCount() {
+        return processes.size();
     }
 
     @Override
@@ -41,14 +61,21 @@ public class Model extends AbstractTableModel {
         if (columns.size() < 3)
             return null;
 
-        var computeNum = columnIndex - 2;
+        var tickCol = columnIndex - 2;
+        Controller.log("" + tickCol);
+        var p = processes.get(rowIndex);
 
-
-        return null;
+        return switch (p.getHistory().get(tickCol)) {
+            case COMPUTING -> "X";
+            case IO -> "I";
+            case WAITING, FINISHED -> "";
+        };
     }
 
     @Override
     public boolean isCellEditable(int rowIndex, int columnIndex) {
-        return super.isCellEditable(rowIndex, columnIndex);
+        return true;
     }
+
+
 }

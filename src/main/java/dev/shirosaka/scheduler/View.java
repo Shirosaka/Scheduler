@@ -8,6 +8,7 @@ public class View extends JFrame {
     private final JTable table;
     private final JButton btnCreate;
     private final JButton btnDelete;
+    private final JButton btnManualTick;
 
     // Debug stuff
     private final JTextArea taDebugLog;
@@ -21,18 +22,24 @@ public class View extends JFrame {
 
         // Table stuff
         final JPanel tablePanel = new JPanel(new BorderLayout());
-        tablePanel.add(table = new JTable(), BorderLayout.CENTER);
+        table = new JTable();
+
+        final JScrollPane tableScrollPane = new JScrollPane(table);
+        tablePanel.add(tableScrollPane, BorderLayout.CENTER);
 
         final JPanel tableManipulationPanel = new JPanel();
         btnCreate = new JButton("Create");
         btnDelete = new JButton("Delete");
+        btnManualTick = new JButton("Manual tick");
         tableManipulationPanel.add(btnCreate);
         tableManipulationPanel.add(btnDelete);
+        tableManipulationPanel.add(btnManualTick);
         tablePanel.add(tableManipulationPanel, BorderLayout.SOUTH);
 
         // Debug stuff
         taDebugLog = new JTextArea();
         taDebugLog.setEditable(false);
+        taDebugLog.setLineWrap(true);
         final JScrollPane debugScrollPane = new JScrollPane(taDebugLog);
         debugScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         debugScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
@@ -58,6 +65,10 @@ public class View extends JFrame {
 
     public JButton getBtnDelete() {
         return btnDelete;
+    }
+
+    public JButton getBtnManualTick() {
+        return btnManualTick;
     }
 
     public JTextArea getTaDebugLog() {
