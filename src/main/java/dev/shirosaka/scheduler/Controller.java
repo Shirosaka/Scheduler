@@ -37,6 +37,8 @@ public class Controller {
     public void initController() {
         log("calling initController()");
 
+        scheduler = new WaitingPriorityScheduler(model.getProcesses());
+
         view.getBtnCreate().addActionListener(l -> {
             log("BtnCreate click");
             var procName = JOptionPane.showInputDialog("Please enter the process name:");
@@ -63,6 +65,7 @@ public class Controller {
     private void tick() {
         ticks++;
         log("tick: " + ticks);
+        scheduler.cycle();
         model.tick(ticks);
     }
 }

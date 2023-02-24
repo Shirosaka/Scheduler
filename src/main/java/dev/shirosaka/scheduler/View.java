@@ -23,6 +23,7 @@ public class View extends JFrame {
         // Table stuff
         final JPanel tablePanel = new JPanel(new BorderLayout());
         table = new JTable();
+        table.setFocusable(false);
 
         final JScrollPane tableScrollPane = new JScrollPane(table);
         tablePanel.add(tableScrollPane, BorderLayout.CENTER);

@@ -61,21 +61,26 @@ public class Model extends AbstractTableModel {
         if (columns.size() < 3)
             return null;
 
-        var tickCol = columnIndex - 2;
-        Controller.log("" + tickCol);
+        var tick = columnIndex - 2;
         var p = processes.get(rowIndex);
 
-        return switch (p.getHistory().get(tickCol)) {
-            case COMPUTING -> "X";
-            case IO -> "I";
-            case WAITING, FINISHED -> "";
-        };
+        switch (p.getHistory().get(tick)) {
+            case COMPUTING:
+                return "X";
+            case IO:
+                return "I";
+            case WAITING:
+                return "S";
+            case FINISHED:
+                return "F";
+            default:
+                return null;
+        }
     }
 
     @Override
     public boolean isCellEditable(int rowIndex, int columnIndex) {
-        return true;
+        return false;
     }
-
 
 }
