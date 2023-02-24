@@ -27,23 +27,18 @@ public class Process {
             char c = workStr.charAt(n);
 
             switch (c) {
-                case 'C':
-                    work.add(ProcessState.COMPUTING);
-                    break;
-                case 'I':
-                    work.add(ProcessState.IO);
-                    break;
-                default:
-                    throw new RuntimeException(String.format("Invalid character %c @ %s:%d in process %s",
-                            c,
-                            workStr,
-                            n,
-                            name));
+                case 'C' -> work.add(ProcessState.COMPUTING);
+                case 'I' -> work.add(ProcessState.IO);
+                default -> throw new RuntimeException(String.format("Invalid character %c @ %s:%d in process %s",
+                        c,
+                        workStr,
+                        n,
+                        name));
             }
         }
 
         // make the work collection non-mutable
-        this.work = new ArrayList<>(work);
+        this.work = List.copyOf(work);
         this.history = new ArrayList<>();
     }
 
@@ -59,20 +54,20 @@ public class Process {
         return priority;
     }
 
+    public void lowerPriority() {
+        priority -= 2;
+    }
+
     public int getWaitTime() {
         return waitTime;
     }
 
-    public int getWorkPos() {
-        return workPos;
-    }
-
-    public ProcessState tick(boolean isWaiting) {
+    public void tick(boolean isWaiting) {
         // check if process is finished
         if (workPos >= work.size()) {
             history.add(ProcessState.FINISHED);
             Controller.log(String.format("Process %s is finished.", name));
-            return ProcessState.FINISHED;
+            return;
         }
 
         var curWork = work.get(workPos);
@@ -81,15 +76,15 @@ public class Process {
         if (isWaiting) {
             // check if there is any open IO work to do
             if (curWork == ProcessState.IO) {
-                Controller.log(String.format(
-                        "Process %s is scheduled to wait, but has open IO work, waiting for IO instead.", name));
+                history.add(ProcessState.IO);
+                Controller.log(String.format("Process %s is scheduled to wait, but has open IO work, waiting for IO instead.", name));
                 workPos++;
-                return curWork;
+                return;
             }
 
             history.add(ProcessState.WAITING);
             Controller.log(String.format("Process %s is waiting since %d tick(s).", name, waitTime++));
-            return ProcessState.WAITING;
+            return;
         }
 
         // check if the process had wait time,
@@ -101,7 +96,6 @@ public class Process {
         Controller.log(String.format("Found work for process %s", name));
         history.add(curWork);
         workPos++;
-        return curWork;
     }
 
     public List<ProcessState> getWork() {

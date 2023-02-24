@@ -35,7 +35,7 @@ public class View extends JFrame {
         tableManipulationPanel.add(btnCreate);
         tableManipulationPanel.add(btnDelete);
         tableManipulationPanel.add(btnManualTick);
-        tablePanel.add(tableManipulationPanel, BorderLayout.SOUTH);
+        tablePanel.add(tableManipulationPanel, BorderLayout.NORTH);
 
         // Debug stuff
         taDebugLog = new JTextArea();

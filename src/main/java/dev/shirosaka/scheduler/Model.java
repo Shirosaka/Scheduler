@@ -1,12 +1,22 @@
 package dev.shirosaka.scheduler;
 
+import org.apache.commons.lang3.ArrayUtils;
+
 import javax.swing.table.AbstractTableModel;
+import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Model extends AbstractTableModel {
     private final List<Process> processes = new ArrayList<>();
+    // processindex, (tickindex, new priority)
+    // used for keeping track of new priority updates on the table
+    private final Map<Integer, List<Map.Entry<Integer, Integer>>> processPriorityList = new HashMap<>();
     private final List<String> columns = new ArrayList<>(List.of("Name", "Start priority"));
+
+    private int currentTick = 0;
 
     public void addProcess(Process proc) {
         if (proc == null || processes.contains(proc))
@@ -17,13 +27,18 @@ public class Model extends AbstractTableModel {
         Controller.log("Added process " + proc.getName() + "@" + i + " with work " + proc.getWork());
     }
 
-    public void removeProcess(Process proc) {
-        if (proc == null || !processes.contains(proc))
+    public void deleteProcesses(int[] rows) {
+        if (rows[0] < 0 || rows[rows.length - 1] >= processes.size())
             return;
-        var i = processes.indexOf(proc);
-        processes.remove(proc);
-        fireTableRowsDeleted(i, i);
-        Controller.log("Deleted process " + proc.getName() + "@" + i + " with work " + proc.getWork());
+
+        ArrayUtils.reverse(rows);
+        for (int n : rows) {
+            Controller.log(String.format("Deleting process %d", n));
+            processPriorityList.remove(n);
+            processes.remove(processes.get(n));
+        }
+
+        fireTableRowsDeleted(rows[0], rows[rows.length - 1]);
     }
 
     public List<Process> getProcesses() {
@@ -31,8 +46,29 @@ public class Model extends AbstractTableModel {
     }
 
     public void tick(int tick) {
+        Controller.log("Model::tick()");
         columns.add("Tick " + tick);
+        currentTick = tick;
         fireTableStructureChanged();
+    }
+
+    public void updateCurrentProcessPriority(Process curProc) {
+        var pid = processes.indexOf(curProc);
+
+        if (!processPriorityList.containsKey(pid)) {
+            Controller.log(String.format("Added processPriorityList entry for pid %d", pid));
+            processPriorityList.put(pid, new ArrayList<>());
+        }
+
+        // hack to show the updated priority at the correct location
+        var tick = currentTick > 0 ? currentTick - 1 : currentTick;
+
+        Controller.log(String.format("Added currentProcessPriority for pid %d with priority %d and tick(s) %d",
+                pid,
+                curProc.getPriority(),
+                tick));
+        var entry = new AbstractMap.SimpleEntry<>(tick, curProc.getPriority());
+        processPriorityList.get(pid).add(entry);
     }
 
     @Override
@@ -64,18 +100,12 @@ public class Model extends AbstractTableModel {
         var tick = columnIndex - 2;
         var p = processes.get(rowIndex);
 
-        switch (p.getHistory().get(tick)) {
-            case COMPUTING:
-                return "X";
-            case IO:
-                return "I";
-            case WAITING:
-                return "S";
-            case FINISHED:
-                return "F";
-            default:
-                return null;
-        }
+        return switch (p.getHistory().get(tick)) {
+            case COMPUTING -> checkAndAppendPrio(rowIndex, tick, "X");
+            case IO -> checkAndAppendPrio(rowIndex, tick, "I");
+            case WAITING -> checkAndAppendPrio(rowIndex, tick, "S");
+            case FINISHED -> checkAndAppendPrio(rowIndex, tick, "F");
+        };
     }
 
     @Override
@@ -83,4 +113,16 @@ public class Model extends AbstractTableModel {
         return false;
     }
 
+    private String checkAndAppendPrio(int pid, int tick, String val) {
+        if (!processPriorityList.containsKey(pid))
+            return val;
+
+        var list = processPriorityList.get(pid);
+        var maybeIdx = list.stream().filter(e -> e.getKey() == tick).findFirst();
+
+        if (maybeIdx.isEmpty())
+            return val;
+
+        return String.format("%s (%d)", val, maybeIdx.get().getValue());
+    }
 }
