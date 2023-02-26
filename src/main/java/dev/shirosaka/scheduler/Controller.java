@@ -33,33 +33,31 @@ public class Controller {
     public void initView() {
         log("calling initView()");
         view.getTable().setModel(model);
-
-        List.of(
-                new Process("A", 12, "CCIIIICCCCCC"),
-                new Process("B", 10, "CIICIIC"),
-                new Process("C", 11, "CCIICCCCC")
-        ).forEach(model::addProcess);
     }
 
     public void initController() {
         log("calling initController()");
-
         scheduler = new WaitingPriorityScheduler(model, model.getProcesses());
-
+        view.getBtnRun().addActionListener(l -> {
+            log("BtnRun click");
+            while (!scheduler.allFinished()) {
+                log("!!!!! Ticking");
+                tick();
+            }
+            log("All current processes are finished, finished running.");
+            JOptionPane.showMessageDialog(null, "All current processes are finished, finished running.");
+        });
         view.getBtnCreate().addActionListener(l -> {
             log("BtnCreate click");
             var procName = JOptionPane.showInputDialog("Please enter the process name:");
-            var origProcPrioStr = JOptionPane.showInputDialog("Please enter the original process priority:");
-            var origProcPrio = Integer.parseInt(origProcPrioStr);
+            var procPrio = Integer.parseInt(JOptionPane.showInputDialog("Please enter the original process priority:"));
             var procWork = JOptionPane.showInputDialog("Please enter the process work (C for Compute; I for IO waiting):");
-            model.addProcess(new Process(procName, origProcPrio, procWork));
+            model.addProcess(new Process(procName, procPrio, procWork));
         });
         view.getBtnDelete().addActionListener(l -> {
             log("BtnDelete click");
-
             var rows = view.getTable().getSelectedRows();
-            if (rows.length > 1)
-            {
+            if (rows.length > 1) {
                 log(String.format("Deleting rows: %s", Arrays.toString(rows)));
                 model.deleteProcesses(rows);
             } else if (rows.length == 1) {
@@ -69,8 +67,20 @@ public class Controller {
             }
         });
         view.getBtnManualTick().addActionListener(l -> {
+            if (scheduler.allFinished()) {
+                log("All current processes are finished, cancelling manual tick.");
+                JOptionPane.showMessageDialog(null, "All current processes are finished, not executing manual tick.");
+                return;
+            }
             log("!!!!! Manually ticking");
             tick();
+        });
+        view.getBtnReset().addActionListener(l -> {
+            log("BtnReset click");
+            model.reset();
+            scheduler.reset();
+            ticks = 0;
+            JOptionPane.showMessageDialog(null, "Reset successful.");
         });
     }
 

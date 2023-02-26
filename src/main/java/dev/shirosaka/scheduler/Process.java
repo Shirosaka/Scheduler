@@ -22,6 +22,7 @@ public class Process {
         if (workStr.isEmpty())
             throw new RuntimeException("Work string cannot be empty");
 
+        // iterate over the workStr and populate `work` accordingly
         workStr = workStr.toUpperCase();
         for (int n = 0; n < workStr.length(); n++) {
             char c = workStr.charAt(n);
@@ -42,29 +43,52 @@ public class Process {
         this.history = new ArrayList<>();
     }
 
+    /**
+     * Gets the process name.
+     * @return the process name.
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Gets the original process priority, unmodified by Process::lowerPriority.
+     * @return the original process priority.
+     */
     public int getOriginalPriority() {
         return originalPriority;
     }
 
+    /**
+     * Gets the process priority.
+     * @return the process priority.
+     */
     public int getPriority() {
         return priority;
     }
 
+    /**
+     * Lowers the process priority by 2.
+     */
     public void lowerPriority() {
         priority -= 2;
     }
 
+    /**
+     * Gets the waiting time of the process.
+     * @return the waiting time.
+     */
     public int getWaitTime() {
         return waitTime;
     }
 
+    /**
+     * Execute one tick on the process.
+     * @param isWaiting whether the scheduler thinks this process should be idle.
+     */
     public void tick(boolean isWaiting) {
         // check if process is finished
-        if (workPos >= work.size()) {
+        if (isFinished()) {
             history.add(ProcessState.FINISHED);
             Controller.log(String.format("Process %s is finished.", name));
             return;
@@ -102,19 +126,31 @@ public class Process {
         return work;
     }
 
+    /**
+     * Gets the next process state.
+     * @return the next process state.
+     */
     public ProcessState getNextState() {
-        if ((workPos + 1) >= work.size())
+        if (isFinished())
             return ProcessState.FINISHED;
 
         return work.get(workPos);
     }
 
+    /**
+     * Gets the process work history.
+     * @return the process history.
+     */
     public List<ProcessState> getHistory() {
         return history;
     }
 
+    /**
+     * Whether the process is finished.
+     * @return true, if the process has no more work; otherwise false.
+     */
     public boolean isFinished() {
-        return (workPos + 1) >= work.size();
+        return workPos >= work.size();
     }
 
     @Override

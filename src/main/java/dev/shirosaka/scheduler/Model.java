@@ -14,10 +14,15 @@ public class Model extends AbstractTableModel {
     // processindex, (tickindex, new priority)
     // used for keeping track of new priority updates on the table
     private final Map<Integer, List<Map.Entry<Integer, Integer>>> processPriorityList = new HashMap<>();
-    private final List<String> columns = new ArrayList<>(List.of("Name", "Start priority"));
+    private final List<String> columns = new ArrayList<>();
 
     private int currentTick = 0;
 
+    public Model(){
+        reset();
+    }
+
+    // adds a process
     public void addProcess(Process proc) {
         if (proc == null || processes.contains(proc))
             return;
@@ -27,6 +32,7 @@ public class Model extends AbstractTableModel {
         Controller.log("Added process " + proc.getName() + "@" + i + " with work " + proc.getWork());
     }
 
+    // deletes one or more processes
     public void deleteProcesses(int[] rows) {
         if (rows[0] < 0 || rows[rows.length - 1] >= processes.size())
             return;
@@ -41,14 +47,32 @@ public class Model extends AbstractTableModel {
         fireTableRowsDeleted(rows[0], rows[rows.length - 1]);
     }
 
+    // gets all processes
     public List<Process> getProcesses() {
         return processes;
     }
 
+    // tick once
     public void tick(int tick) {
         Controller.log("Model::tick()");
         columns.add("Tick " + tick);
         currentTick = tick;
+        fireTableStructureChanged();
+    }
+
+    // reset everything
+    public void reset() {
+        Controller.log("Model::reset()");
+        currentTick = 0;
+        processes.clear();
+        processes.addAll(List.of(
+                new Process("A", 12, "CCIIIICCCCCC"),
+                new Process("B", 10, "CIICIIC"),
+                new Process("C", 11, "CCIICCCCC")
+        ));
+        processPriorityList.clear();
+        columns.clear();
+        columns.addAll(List.of("Name", "Start priority"));
         fireTableStructureChanged();
     }
 
@@ -60,14 +84,11 @@ public class Model extends AbstractTableModel {
             processPriorityList.put(pid, new ArrayList<>());
         }
 
-        // hack to show the updated priority at the correct location
-        var tick = currentTick > 0 ? currentTick - 1 : currentTick;
-
         Controller.log(String.format("Added currentProcessPriority for pid %d with priority %d and tick(s) %d",
                 pid,
                 curProc.getPriority(),
-                tick));
-        var entry = new AbstractMap.SimpleEntry<>(tick, curProc.getPriority());
+                currentTick));
+        var entry = new AbstractMap.SimpleEntry<>(currentTick, curProc.getPriority());
         processPriorityList.get(pid).add(entry);
     }
 
@@ -100,10 +121,13 @@ public class Model extends AbstractTableModel {
         var tick = columnIndex - 2;
         var p = processes.get(rowIndex);
 
+        if (tick >= p.getHistory().size())
+            return "-";
+
         return switch (p.getHistory().get(tick)) {
             case COMPUTING -> checkAndAppendPrio(rowIndex, tick, "X");
             case IO -> checkAndAppendPrio(rowIndex, tick, "I");
-            case WAITING -> checkAndAppendPrio(rowIndex, tick, "S");
+            case WAITING -> checkAndAppendPrio(rowIndex, tick, "");
             case FINISHED -> checkAndAppendPrio(rowIndex, tick, "F");
         };
     }
